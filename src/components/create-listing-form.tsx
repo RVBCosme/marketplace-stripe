@@ -45,6 +45,8 @@ export function CreateListingForm() {
 
   function set<K extends keyof typeof EMPTY>(key: K, value: string) {
     setFields((f) => ({ ...f, [key]: value }));
+    // Clear a field's error as soon as the seller edits it; Publish checks everything again.
+    setErrors((e) => (e[key] ? { ...e, [key]: undefined } : e));
   }
 
   function choosePhoto(file: File | undefined) {

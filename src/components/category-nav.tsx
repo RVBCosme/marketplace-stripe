@@ -70,7 +70,7 @@ export function CategoryTabs({ active, q }: { active: Category | null; q: string
     );
   return (
     <div className="flex flex-col gap-3 lg:hidden">
-      <SearchForm q={q} category={active} />
+      <SearchForm q={q} category={active} onGray />
       <nav aria-label="Categories" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         <Link href={hrefFor(null, q)} className={tab(!active)} aria-current={!active ? "page" : undefined}>
           All
