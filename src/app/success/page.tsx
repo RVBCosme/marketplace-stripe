@@ -108,7 +108,7 @@ async function Order({ searchParams }: { searchParams: SearchParams }) {
           )}
           {order.confirmed_by_webhook_at
             ? "Payment confirmed by Stripe's webhook."
-            : "Waiting for Stripe's webhook to confirm (refresh in a moment)."}
+            : "Verified with Stripe on this page; not yet confirmed by Stripe's webhook."}
         </li>
       </ul>
 

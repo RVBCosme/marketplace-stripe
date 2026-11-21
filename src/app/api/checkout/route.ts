@@ -38,6 +38,8 @@ export async function POST(request: Request) {
           },
         ],
         payment_intent_data: { application_fee_amount: fee },
+        // Keep the window short in which two buyers could both be paying for the same item.
+        expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
         success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}&listing=${listing.id}`,
         cancel_url: `${origin}/item/${listing.id}`,
         metadata: { app: APP_TAG, listing_id: listing.id, application_fee_amount: String(fee) },
