@@ -44,9 +44,10 @@ export type Listing = {
   image_url: string;
   location: string;
   created_at: string;
+  sold_at: string | null;
 };
 
-export const LISTING_COLUMNS = "id, title, description, price, category, seller_email, image_url, location, created_at";
+export const LISTING_COLUMNS = "id, title, description, price, category, seller_email, image_url, location, created_at, sold_at";
 
 /** "Garden & Outdoor" -> "garden-and-outdoor" */
 export function categorySlug(category: Category): string {
@@ -159,4 +160,27 @@ export function timeAgo(iso: string, now: number = Date.now()): string {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function isUuid(value: string): boolean {
   return UUID.test(value);
+}
+
+// ---- Payments (Stripe Connect) ----
+
+/** The marketplace keeps 10% of each sale. */
+export const PLATFORM_FEE_PERCENT = 10;
+/** Stripe's smallest card charge in USD. Cheaper (and free) items can't be bought online. */
+export const MIN_CHECKOUT_PRICE = 0.5;
+
+export function toCents(price: number | string): number {
+  return Math.round(Number(price) * 100);
+}
+
+export function platformFeeCents(amountCents: number): number {
+  return Math.round((amountCents * PLATFORM_FEE_PERCENT) / 100);
+}
+
+export function canCheckout(price: number | string): boolean {
+  return Number(price) >= MIN_CHECKOUT_PRICE;
+}
+
+export function formatCents(cents: number, currency = "usd"): string {
+  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: currency.toUpperCase() });
 }

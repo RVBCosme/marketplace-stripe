@@ -13,6 +13,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
           sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
           className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
         />
+        {listing.sold_at && (
+          <span className="absolute top-2 left-2 rounded-md bg-foreground/85 px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase">
+            Sold
+          </span>
+        )}
       </div>
       <div className="px-0.5">
         <p className="text-[17px] font-semibold">{formatPrice(listing.price)}</p>

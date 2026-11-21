@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   CATEGORIES,
+  canCheckout,
+  formatCents,
+  platformFeeCents,
+  toCents,
   categoryFromSlug,
   categorySlug,
   formatPrice,
@@ -130,5 +134,30 @@ describe("ids", () => {
   it("recognises listing ids", () => {
     expect(isUuid("3f1c2e7a-9b2d-4c1e-8f00-0a1b2c3d4e5f")).toBe(true);
     expect(isUuid("not-an-id")).toBe(false);
+  });
+});
+
+describe("payments", () => {
+  it("converts prices to cents without float errors", () => {
+    expect(toCents(280)).toBe(28000);
+    expect(toCents("19.99")).toBe(1999);
+    expect(toCents(0.1 + 0.2)).toBe(30);
+  });
+
+  it("keeps a 10% platform fee", () => {
+    expect(platformFeeCents(28000)).toBe(2800);
+    expect(platformFeeCents(1999)).toBe(200);
+  });
+
+  it("only sells items Stripe can charge for", () => {
+    expect(canCheckout(0)).toBe(false);
+    expect(canCheckout(0.49)).toBe(false);
+    expect(canCheckout(0.5)).toBe(true);
+    expect(canCheckout("45")).toBe(true);
+  });
+
+  it("formats amounts in cents", () => {
+    expect(formatCents(28000)).toBe("$280.00");
+    expect(formatCents(2800)).toBe("$28.00");
   });
 });

@@ -1,40 +1,44 @@
-# Marketplace
+# Marketplace + Stripe Connect
 
-A mini Facebook-style Marketplace: post an item with a photo, browse by category, search, open a listing, and message the seller. Built with Next.js, React, Tailwind CSS, shadcn/ui and Supabase.
+The Marketplace from Test 3 ([repo](https://github.com/RVBCosme/marketplace)), now with payments: sellers connect a Stripe account, buyers press **Buy Now** and pay with Stripe Checkout, the seller is paid, and the marketplace keeps a 10% fee. Built with Next.js, React, Tailwind CSS, shadcn/ui, Supabase and Stripe Connect. Everything runs in Stripe's sandbox (test mode), so no real money moves.
 
-**Live app:** https://rene-cosme-marketplace.vercel.app
+**Live app:** https://rene-cosme-marketplace-stripe.vercel.app
 
-## What it does
+## Try a purchase
 
-- **Create listing** (`/create`): upload a photo (click or drag and drop), then enter a title, price, category, description, location and your email. A live preview shows how the listing will look. Photos go to Supabase Storage and the listing is saved in Supabase.
-- **Browse and search** (`/`): all listings in a responsive grid, newest first, with category tabs (a sidebar on desktop, scrolling tabs on phones). Keyword search matches titles and descriptions and keeps the selected category.
-- **Listing page** (`/item/[id]`): the photo, price, when and where it was listed, category, details and the seller's email.
-- **Message Seller**: buyers write a message and leave their email; it is saved in the Supabase `messages` table. The seller's email is filled in by the database from the listing.
-- No login needed. The 12 sample listings use illustrated product pictures and `example.com` seller emails.
+1. Open a listing that shows **Buy Now**, for example the Trek FX 2 hybrid bike (its seller, maya.chen@example.com, finished Stripe onboarding).
+2. Press **Buy Now** and pay with the test card `4242 4242 4242 4242`, any future expiry date, any CVC and any ZIP code.
+3. The success page shows the amount, the 10% fee and the order saved in Supabase, and the listing now shows **Sold**.
+
+## How it works
+
+- **Seller onboarding** (`/sell`): a seller enters the email on their listings and presses **Connect with Stripe**. The server creates a Stripe connected account (Express dashboard, the platform pays Stripe's fees), saves its account id in Supabase, and sends the seller to Stripe's hosted onboarding. `/sell/return` checks the account with Stripe when they come back.
+- **Buy Now**: listings whose seller can take payments show the button; other listings can't be bought (they show "Online payment isn't set up"). Sold items and free items can't be bought either.
+- **Pay the seller**: `/api/checkout` creates the Checkout Session on the seller's connected account (a direct charge) with an `application_fee_amount` of 10% for the marketplace.
+- **Order confirmation**: a Stripe webhook (`/api/stripe/webhook`, registered with `connect: true`) verifies the signature, records the order in Supabase and marks the listing as Sold. It also keeps sellers' status in sync from `account.updated`. The sandbox is shared, so events that aren't this app's are ignored. The success page shows the order and whether the webhook has confirmed it.
 
 ## How the data is protected
 
-The browser only has the Supabase public key, so the database enforces the rules itself (`supabase/schema.sql`, based on the challenge's schema):
-
-- Row Level Security: anyone can read and add listings and send messages; nobody can edit or delete through the public key.
-- Messages can be sent but not read back by visitors, because they contain buyers' email addresses.
-- Check constraints: titles 1-100 characters, prices from 0, one of the 18 categories, valid emails, descriptions up to 2,000 characters, messages up to 1,000, and photos must come from this project's `listing-images` bucket.
-- Triggers set ids and times on the server, trim text before the checks run, and copy the seller's email onto each message from the listing.
-- The `listing-images` bucket accepts images only, up to 5 MB.
+- The Stripe secret key, the webhook secret and a server secret stay on the server (Vercel environment variables); none are in this repo.
+- `supabase/stripe.sql` adds `sellers`, `orders` and `listings.sold_at`. Visitors can see which seller emails take payments, but not their Stripe account ids, and can't read orders.
+- Writes to sellers and orders go through Postgres functions that refuse to run without the server secret (only its SHA-256 hash is stored in the database), so nobody can attach their own Stripe account to someone's listings or mark an item as paid from the browser.
+- Without a login, a seller is identified by the email on their listings, as the challenge allows. The first Stripe account connected to an email keeps it.
 
 ## Stack
 
-- Next.js 16 (App Router, Cache Components with streaming) and React 19, TypeScript
-- Tailwind CSS 4 and shadcn/ui (Button, Input, Textarea, Label, Badge, Card)
-- Supabase: Postgres and Storage (`@supabase/supabase-js`)
-- Vitest for the listing rules (categories, prices, validation, search, time labels)
+- Next.js 16 (App Router, Cache Components) and React 19, TypeScript
+- Tailwind CSS 4 and shadcn/ui
+- Supabase: Postgres and Storage
+- Stripe: Connect (connected accounts and Account Links), Checkout, webhooks (`stripe` Node SDK)
+- Vitest unit tests for the listing and payment rules (prices in cents, the 10% fee, what can be bought)
 - Deployed on Vercel
 
 ## Run it locally
 
-1. Create a Supabase project and run `supabase/schema.sql` in its SQL editor (change the project URL in the `image_url` check to yours).
-2. Copy `.env.example` to `.env.local` and fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (your project URL and its publishable or anon key).
-3. Then:
+1. Set up Supabase as in the [Test 3 repo](https://github.com/RVBCosme/marketplace) (`supabase/schema.sql`), then run `supabase/stripe.sql` and store your server secret's hash as described at the top of that file.
+2. Copy `.env.example` to `.env.local` and fill it in (Supabase URL and public key, Stripe sandbox keys, a server secret).
+3. Deploy, then register the webhook once: `node --env-file=.env.local scripts/create-webhook.mjs https://your-app.vercel.app`, and add the printed `STRIPE_WEBHOOK_SECRET` to `.env.local` and Vercel.
+4. Then:
 
 ```bash
 npm install
@@ -45,6 +49,6 @@ npm run build    # production build
 
 ## Built with AI
 
-Built with the help of an AI coding assistant (Claude Code). I checked it with unit tests and an end-to-end browser run against the real database: creating a listing with a photo, browsing, category tabs, search, the listing page, Message Seller, a missing listing and the phone layout. I also probed the database with the public key (bad prices, categories, emails and photo links, edits, deletes and reading messages are all refused).
+Built with the help of an AI coding assistant (Claude Code). I checked it with unit tests, by onboarding a test seller through Stripe's hosted onboarding, buying with the 4242 test card, and confirming that the webhook saved the order in Supabase and marked the listing as Sold. I also checked that the database refuses seller and order changes without the server secret.
 
 By Rene Vincent Cosme · [Portfolio](https://renevincentcosme.vercel.app) · [GitHub](https://github.com/RVBCosme)

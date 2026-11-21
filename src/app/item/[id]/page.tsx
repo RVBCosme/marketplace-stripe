@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Clock, Mail, MapPin } from "lucide-react";
+import { BuyBox } from "@/components/buy-box";
 import { CategoryIcon } from "@/components/category-icon";
 import { MessageSeller } from "@/components/message-seller";
 import { Badge } from "@/components/ui/badge";
@@ -10,17 +11,19 @@ import { categorySlug, formatPrice, timeAgo } from "@/lib/listings";
 import { getListing } from "@/lib/queries";
 
 type Params = Promise<{ id: string }>;
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-export default function ItemPage({ params }: { params: Params }) {
+export default function ItemPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
   return (
     <Suspense fallback={<ItemSkeleton />}>
-      <Item params={params} />
+      <Item params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function Item({ params }: { params: Params }) {
+async function Item({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
   const { id } = await params;
+  const checkoutError = (await searchParams).checkout === "unavailable";
   const listing = await getListing(id);
   if (!listing) notFound();
 
@@ -42,7 +45,10 @@ async function Item({ params }: { params: Params }) {
       <aside className="flex w-full flex-col gap-4 bg-white p-4 lg:h-[calc(100dvh-3.5rem)] lg:w-[400px] lg:shrink-0 lg:overflow-y-auto">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl leading-tight font-bold">{listing.title}</h1>
-          <p className="text-xl font-semibold">{formatPrice(listing.price)}</p>
+          <p className="flex items-center gap-2 text-xl font-semibold">
+            {formatPrice(listing.price)}
+            {listing.sold_at && <Badge className="bg-foreground px-2 text-white">Sold</Badge>}
+          </p>
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="size-3.5" aria-hidden="true" />
@@ -60,6 +66,8 @@ async function Item({ params }: { params: Params }) {
             </Badge>
           </Link>
         </div>
+
+        <BuyBox listing={listing} checkoutError={checkoutError} />
 
         <section className="flex flex-col gap-1 border-t pt-4">
           <h2 className="text-[17px] font-semibold">Details</h2>

@@ -12,11 +12,16 @@ export function SiteHeader() {
           </span>
           <span className="text-xl font-bold tracking-tight">Marketplace</span>
         </Link>
+        <div className="flex items-center gap-2">
+        <Link href="/sell" className={buttonVariants({ size: "lg", variant: "ghost", className: "hidden px-3 font-semibold sm:inline-flex" })}>
+          Get paid
+        </Link>
         <Link href="/create" className={buttonVariants({ size: "lg", className: "gap-1.5 px-3 font-semibold" })}>
           <Plus className="size-4" aria-hidden="true" />
           <span className="hidden sm:inline">Create new listing</span>
           <span className="sm:hidden">Sell</span>
         </Link>
+        </div>
       </div>
     </header>
   );

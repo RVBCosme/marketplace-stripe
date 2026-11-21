@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutGrid, Plus } from "lucide-react";
+import { CreditCard, LayoutGrid, Plus } from "lucide-react";
 import { CategoryIcon } from "@/components/category-icon";
 import { SearchForm } from "@/components/search-form";
 import { buttonVariants } from "@/components/ui/button";
@@ -43,6 +43,12 @@ export function CategorySidebar({ active, q }: { active: Category | null; q: str
         <Link href="/create" className={cn(buttonVariants({ variant: "secondary", className: "my-2 h-9 gap-1.5 bg-accent text-primary hover:bg-accent/80" }))}>
           <Plus className="size-4" aria-hidden="true" />
           Create new listing
+        </Link>
+        <Link href="/sell" className={item(false)}>
+          <span className={icon(false)}>
+            <CreditCard className="size-5" aria-hidden="true" />
+          </span>
+          Get paid with Stripe
         </Link>
         <h2 className="mt-2 mb-1 border-t px-2 pt-3 text-[17px] font-semibold">Categories</h2>
         {CATEGORIES.map((c) => {
